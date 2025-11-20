@@ -296,7 +296,7 @@ export default async function SettingsPage() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="language">Primary Language</Label>
-            <Select defaultValue={account.language || 'en'}>
+            <Select defaultValue="en">
               <SelectTrigger id="language">
                 <SelectValue />
               </SelectTrigger>

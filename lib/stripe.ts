@@ -94,13 +94,13 @@ export async function calculateUsage(accountId: string) {
   if (!account) throw new Error('Account not found')
 
   // Plan limits
-  const limits = {
+  const limits: Record<PlanType, { minutes: number; sms: number; emails: number }> = {
     STARTER: { minutes: 500, sms: 1000, emails: 5000 },
     PRO: { minutes: 2000, sms: 5000, emails: 25000 },
     BUSINESS: { minutes: 10000, sms: 25000, emails: 100000 },
   }
 
-  const planLimits = limits[account.plan]
+  const planLimits = limits[account.plan as PlanType]
 
   // Calculate overages
   const overages = {
@@ -110,13 +110,13 @@ export async function calculateUsage(accountId: string) {
   }
 
   // Overage rates (per unit in USD)
-  const rates = {
+  const rates: Record<PlanType, { minutes: number; sms: number; emails: number }> = {
     STARTER: { minutes: 0.20, sms: 0.08, emails: 0.02 },
     PRO: { minutes: 0.15, sms: 0.05, emails: 0.01 },
     BUSINESS: { minutes: 0.10, sms: 0.03, emails: 0.005 },
   }
 
-  const planRates = rates[account.plan]
+  const planRates = rates[account.plan as PlanType]
 
   // Calculate costs
   const costs = {
@@ -128,7 +128,7 @@ export async function calculateUsage(accountId: string) {
   const totalOverage = costs.minutes + costs.sms + costs.emails
 
   // Get plan price
-  const planPrices = {
+  const planPrices: Record<PlanType, number> = {
     STARTER: 179,
     PRO: 179,
     BUSINESS: 299,
@@ -145,7 +145,7 @@ export async function calculateUsage(accountId: string) {
       billingPeriodStart: account.currentPeriodStart,
       billingPeriodEnd: account.currentPeriodEnd || now,
       plan: account.plan,
-      planPrice: planPrices[account.plan],
+      planPrice: planPrices[account.plan as PlanType],
       minutesIncluded: planLimits.minutes,
       minutesUsed: account.minutesUsed,
       minutesOverage: overages.minutes,
@@ -155,12 +155,12 @@ export async function calculateUsage(accountId: string) {
       emailsIncluded: planLimits.emails,
       emailsUsed: account.emailsUsed,
       emailsOverage: overages.emails,
-      baseCost: planPrices[account.plan],
+      baseCost: planPrices[account.plan as PlanType],
       minutesCost: costs.minutes,
       smsCost: costs.sms,
       emailsCost: costs.emails,
       overageCost: totalOverage,
-      totalCost: planPrices[account.plan] + totalOverage,
+      totalCost: planPrices[account.plan as PlanType] + totalOverage,
     },
   })
 
