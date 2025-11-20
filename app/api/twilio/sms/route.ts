@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
           firstName: 'Unknown',
           fullName: 'Unknown',
           phone: from,
-          source: 'SMS',
+          source: 'PHONE_CALL',
         },
       })
     }
