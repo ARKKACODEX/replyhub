@@ -335,7 +335,7 @@ export default async function AnalyticsPage({
             Call Performance
           </h3>
           <div className="space-y-4">
-            {callsByStatus.map((stat) => {
+            {callsByStatus.map((stat: { status: string; _count: number }) => {
               const percentage = (stat._count / totalCalls) * 100
               return (
                 <div key={stat.status}>
@@ -390,7 +390,7 @@ export default async function AnalyticsPage({
             Appointment Status
           </h3>
           <div className="space-y-4">
-            {appointmentsByStatus.map((stat) => {
+            {appointmentsByStatus.map((stat: { status: string; _count: number }) => {
               const percentage = (stat._count / totalAppointments) * 100
               return (
                 <div key={stat.status}>
@@ -430,7 +430,7 @@ export default async function AnalyticsPage({
           Most Active Contacts
         </h3>
         <div className="space-y-3">
-          {topContacts.map((contact, index) => {
+          {topContacts.map((contact: any, index: number) => {
             const totalInteractions =
               contact._count.calls +
               contact._count.messages +

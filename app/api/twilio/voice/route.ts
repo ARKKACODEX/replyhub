@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     // Check business hours
     const now = new Date()
     const businessHours = account.businessHours as any
-    const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'lowercase' })
+    const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
     const currentTime = now.toLocaleTimeString('en-US', {
       hour12: false,
       hour: '2-digit',

@@ -96,7 +96,7 @@ export default async function DashboardPage() {
   const outboundCalls = await prisma.call.count({
     where: { accountId, direction: 'OUTBOUND' },
   })
-  const missedCalls = callsByStatus.find((s) => s.status === 'NO_ANSWER')?._count || 0
+  const missedCalls = callsByStatus.find((s: any) => s.status === 'NO_ANSWER')?._count || 0
 
   const minutesPercentage = (dbUser.account.minutesUsed / dbUser.account.minutesLimit) * 100
   const smsPercentage = (dbUser.account.smsUsed / dbUser.account.smsLimit) * 100
@@ -309,7 +309,7 @@ export default async function DashboardPage() {
                 No calls yet. Start making calls to see them here.
               </p>
             ) : (
-              recentCalls.map((call) => (
+              recentCalls.map((call: any) => (
                 <div
                   key={call.id}
                   className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors"
@@ -375,7 +375,7 @@ export default async function DashboardPage() {
                 No upcoming appointments. Schedule one to get started.
               </p>
             ) : (
-              recentAppointments.map((appointment) => (
+              recentAppointments.map((appointment: any) => (
                 <div
                   key={appointment.id}
                   className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors"

@@ -266,7 +266,7 @@ export default async function AppointmentsPage({
                 </TableCell>
               </TableRow>
             ) : (
-              appointments.map((appointment) => {
+              appointments.map((appointment: any) => {
                 const initials = `${appointment.contact?.firstName?.[0] || ''}${
                   appointment.contact?.lastName?.[0] || ''
                 }`.toUpperCase()

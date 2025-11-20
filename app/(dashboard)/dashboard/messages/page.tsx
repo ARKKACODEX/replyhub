@@ -213,7 +213,7 @@ export default async function MessagesPage({
             </Button>
           </div>
         ) : (
-          messages.map((message) => {
+          messages.map((message: any) => {
             const initials = `${message.contact?.firstName?.[0] || ''}${
               message.contact?.lastName?.[0] || ''
             }`.toUpperCase()

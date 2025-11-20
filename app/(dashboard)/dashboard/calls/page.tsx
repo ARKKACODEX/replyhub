@@ -266,7 +266,7 @@ export default async function CallsPage({ searchParams }: CallsPageProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              calls.map((call) => (
+              calls.map((call: any) => (
                 <TableRow key={call.id}>
                   <TableCell>
                     <div className="flex items-center space-x-3">

@@ -164,7 +164,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
                 {contacts.length > 0
                   ? Math.round(
                       contacts.reduce(
-                        (sum, c) =>
+                        (sum: number, c: any) =>
                           sum + c._count.calls + c._count.messages + c._count.appointments,
                         0
                       ) / contacts.length
@@ -220,7 +220,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
                 </TableCell>
               </TableRow>
             ) : (
-              contacts.map((contact) => {
+              contacts.map((contact: any) => {
                 const initials = `${contact.firstName?.[0] || ''}${
                   contact.lastName?.[0] || ''
                 }`.toUpperCase()

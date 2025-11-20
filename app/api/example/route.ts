@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { handleAPIError, ValidationError, UnauthorizedError } from '@/lib/api-error'
+import { ValidationError, UnauthorizedError } from '@/lib/api-error'
+import { handleAPIError } from '@/lib/error-handler'
 import { prisma } from '@/lib/db'
 
 /**

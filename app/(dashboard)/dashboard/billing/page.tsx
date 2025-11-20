@@ -260,7 +260,7 @@ export default async function BillingPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {usageRecords.map((record) => (
+              {usageRecords.map((record: any) => (
                 <TableRow key={record.id}>
                   <TableCell>
                     {new Date(record.createdAt).toLocaleDateString()}
