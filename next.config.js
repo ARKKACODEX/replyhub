@@ -17,7 +17,9 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: ['arkka.app', '*.arkka.app'],
     },
+    serverComponentsExternalPackages: ['twilio'],
   },
+  output: 'standalone',
 }
 
 module.exports = nextConfig
