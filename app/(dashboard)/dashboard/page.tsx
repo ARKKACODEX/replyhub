@@ -79,7 +79,7 @@ export default async function DashboardPage() {
     prisma.appointment.findMany({
       where: { accountId, deletedAt: null },
       include: { contact: true },
-      orderBy: { scheduledFor: 'asc' },
+      orderBy: { startTime: 'asc' },
       take: 5,
     }),
     prisma.call.groupBy({
@@ -390,7 +390,7 @@ export default async function DashboardPage() {
                         {appointment.contact?.lastName}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(appointment.scheduledFor).toLocaleString()}
+                        {new Date(appointment.startTime).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -398,7 +398,7 @@ export default async function DashboardPage() {
                     variant={
                       appointment.status === 'CONFIRMED'
                         ? 'success'
-                        : appointment.status === 'PENDING'
+                        : appointment.status === 'SCHEDULED'
                         ? 'warning'
                         : 'default'
                     }

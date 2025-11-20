@@ -84,7 +84,8 @@ export default async function AppointmentsPage({
           ],
         },
       },
-      { notes: { contains: searchParams.search, mode: 'insensitive' } },
+      { staffNotes: { contains: searchParams.search, mode: 'insensitive' } },
+      { customerNotes: { contains: searchParams.search, mode: 'insensitive' } },
     ]
   }
 
@@ -97,7 +98,7 @@ export default async function AppointmentsPage({
     prisma.appointment.findMany({
       where,
       include: { contact: true },
-      orderBy: { scheduledFor: 'asc' },
+      orderBy: { startTime: 'asc' },
       skip: offset,
       take: limit,
     }),
@@ -114,7 +115,7 @@ export default async function AppointmentsPage({
         where: { accountId, status: 'CONFIRMED', deletedAt: null },
       }),
       prisma.appointment.count({
-        where: { accountId, status: 'PENDING', deletedAt: null },
+        where: { accountId, status: 'SCHEDULED', deletedAt: null },
       }),
       prisma.appointment.count({
         where: { accountId, status: 'COMPLETED', deletedAt: null },
@@ -123,7 +124,7 @@ export default async function AppointmentsPage({
         where: {
           accountId,
           status: 'CONFIRMED',
-          scheduledFor: { gte: now },
+          startTime: { gte: now },
           deletedAt: null,
         },
       }),
@@ -223,7 +224,7 @@ export default async function AppointmentsPage({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="SCHEDULED">Scheduled</SelectItem>
               <SelectItem value="CONFIRMED">Confirmed</SelectItem>
               <SelectItem value="COMPLETED">Completed</SelectItem>
               <SelectItem value="CANCELLED">Cancelled</SelectItem>
@@ -269,9 +270,9 @@ export default async function AppointmentsPage({
                 const initials = `${appointment.contact?.firstName?.[0] || ''}${
                   appointment.contact?.lastName?.[0] || ''
                 }`.toUpperCase()
-                const isPast = new Date(appointment.scheduledFor) < now
+                const isPast = new Date(appointment.startTime) < now
                 const isToday =
-                  new Date(appointment.scheduledFor).toDateString() ===
+                  new Date(appointment.startTime).toDateString() ===
                   now.toDateString()
 
                 return (
@@ -302,10 +303,10 @@ export default async function AppointmentsPage({
                         <Clock className="h-4 w-4 text-gray-400" />
                         <div>
                           <p className="text-sm font-medium">
-                            {new Date(appointment.scheduledFor).toLocaleDateString()}
+                            {new Date(appointment.startTime).toLocaleDateString()}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(appointment.scheduledFor).toLocaleTimeString([], {
+                            {new Date(appointment.startTime).toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit',
                             })}
@@ -341,7 +342,7 @@ export default async function AppointmentsPage({
                         variant={
                           appointment.status === 'CONFIRMED'
                             ? 'success'
-                            : appointment.status === 'PENDING'
+                            : appointment.status === 'SCHEDULED'
                             ? 'warning'
                             : appointment.status === 'COMPLETED'
                             ? 'default'
@@ -353,7 +354,7 @@ export default async function AppointmentsPage({
                     </TableCell>
                     <TableCell>
                       <div className="max-w-xs truncate text-sm text-muted-foreground">
-                        {appointment.notes || '-'}
+                        {appointment.staffNotes || appointment.customerNotes || '-'}
                       </div>
                     </TableCell>
                     <TableCell>

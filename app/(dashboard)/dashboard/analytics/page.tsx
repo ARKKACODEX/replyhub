@@ -407,7 +407,7 @@ export default async function AnalyticsPage({
                       className={`h-2 rounded-full ${
                         stat.status === 'CONFIRMED'
                           ? 'bg-green-500'
-                          : stat.status === 'PENDING'
+                          : stat.status === 'SCHEDULED'
                           ? 'bg-yellow-500'
                           : stat.status === 'COMPLETED'
                           ? 'bg-blue-500'

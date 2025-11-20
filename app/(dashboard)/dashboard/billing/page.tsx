@@ -86,8 +86,8 @@ export default async function BillingPage() {
         'Google Calendar integration',
       ],
     },
-    ENTERPRISE: {
-      name: 'Enterprise',
+    BUSINESS: {
+      name: 'Business',
       price: 499,
       features: [
         'Unlimited call minutes',
@@ -229,7 +229,7 @@ export default async function BillingPage() {
                   </Badge>
                 ) : (
                   <Button className="w-full">
-                    {key === 'ENTERPRISE' ? 'Contact Sales' : 'Upgrade'}
+                    {key === 'BUSINESS' ? 'Contact Sales' : 'Upgrade'}
                     <ArrowUpRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}

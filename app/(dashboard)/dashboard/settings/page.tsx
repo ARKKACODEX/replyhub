@@ -201,9 +201,12 @@ export default async function SettingsPage() {
             </p>
             <textarea
               className="w-full min-h-[100px] p-3 border rounded-md"
-              defaultValue={account.greetingMessage || ''}
+              defaultValue=""
               placeholder="Thank you for calling. Please hold while we connect you..."
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Note: Configure via Knowledge Base settings
+            </p>
           </div>
         </div>
 
