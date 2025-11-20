@@ -69,7 +69,7 @@ export default async function AppointmentsPage({
   const offset = (page - 1) * limit
 
   // Build filters
-  const where: any = { accountId, deletedAt: null }
+  const where: any = { accountId }
 
   if (searchParams.search) {
     where.OR = [
@@ -112,20 +112,19 @@ export default async function AppointmentsPage({
   const [confirmedCount, pendingCount, completedCount, upcomingCount] =
     await Promise.all([
       prisma.appointment.count({
-        where: { accountId, status: 'CONFIRMED', deletedAt: null },
+        where: { accountId, status: 'CONFIRMED' },
       }),
       prisma.appointment.count({
-        where: { accountId, status: 'SCHEDULED', deletedAt: null },
+        where: { accountId, status: 'SCHEDULED' },
       }),
       prisma.appointment.count({
-        where: { accountId, status: 'COMPLETED', deletedAt: null },
+        where: { accountId, status: 'COMPLETED' },
       }),
       prisma.appointment.count({
         where: {
           accountId,
           status: 'CONFIRMED',
           startTime: { gte: now },
-          deletedAt: null,
         },
       }),
     ])

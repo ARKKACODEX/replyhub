@@ -62,7 +62,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     prisma.call.count({ where: { accountId } }),
     prisma.contact.count({ where: { accountId, deletedAt: null } }),
-    prisma.appointment.count({ where: { accountId, deletedAt: null } }),
+    prisma.appointment.count({ where: { accountId } }),
     prisma.message.count({ where: { accountId } }),
     prisma.call.count({
       where: { accountId, createdAt: { gte: today, lt: tomorrow } },
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
       take: 5,
     }),
     prisma.appointment.findMany({
-      where: { accountId, deletedAt: null },
+      where: { accountId },
       include: { contact: true },
       orderBy: { startTime: 'asc' },
       take: 5,

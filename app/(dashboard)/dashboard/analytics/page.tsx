@@ -89,7 +89,7 @@ export default async function AnalyticsPage({
       where: { accountId, createdAt: { gte: startDate } },
     }),
     prisma.appointment.count({
-      where: { accountId, createdAt: { gte: startDate }, deletedAt: null },
+      where: { accountId, createdAt: { gte: startDate } },
     }),
     prisma.contact.count({
       where: { accountId, deletedAt: null },
@@ -117,7 +117,7 @@ export default async function AnalyticsPage({
     // Appointments by status
     prisma.appointment.groupBy({
       by: ['status'],
-      where: { accountId, createdAt: { gte: startDate }, deletedAt: null },
+      where: { accountId, createdAt: { gte: startDate } },
       _count: true,
     }),
 
@@ -194,7 +194,6 @@ export default async function AnalyticsPage({
       where: {
         accountId,
         createdAt: { gte: prevStartDate, lt: prevEndDate },
-        deletedAt: null,
       },
     }),
   ])
