@@ -7,11 +7,18 @@ import twilio from 'twilio'
 import { prisma } from './db'
 import { withRetry } from './retry'
 
-// Initialize Twilio client
-export const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID!,
-  process.env.TWILIO_AUTH_TOKEN!
-)
+// Lazy initialization of Twilio client to prevent build-time errors
+let twilioClientInstance: ReturnType<typeof twilio> | null = null
+
+function getTwilioClient() {
+  if (!twilioClientInstance) {
+    twilioClientInstance = twilio(
+      process.env.TWILIO_ACCOUNT_SID!,
+      process.env.TWILIO_AUTH_TOKEN!
+    )
+  }
+  return twilioClientInstance
+}
 
 /**
  * Provision a new phone number for a customer
@@ -22,6 +29,7 @@ export async function provisionPhoneNumber(params: {
   country?: string
 }) {
   const { accountId, areaCode = '415', country = 'US' } = params
+  const twilioClient = getTwilioClient()
 
   try {
     // Search for available numbers
@@ -79,6 +87,8 @@ export async function sendSMS(params: {
   accountId: string
   contactId?: string
 }) {
+  const twilioClient = getTwilioClient()
+
   try {
     const message = await withRetry(() =>
       twilioClient.messages.create({
@@ -131,6 +141,8 @@ export async function makeCall(params: {
   accountId: string
   contactId?: string
 }) {
+  const twilioClient = getTwilioClient()
+
   try {
     const call = await withRetry(() =>
       twilioClient.calls.create({
@@ -169,6 +181,8 @@ export async function makeCall(params: {
  * Get call recording
  */
 export async function getRecording(recordingSid: string) {
+  const twilioClient = getTwilioClient()
+
   try {
     const recording = await twilioClient.recordings(recordingSid).fetch()
     return {
