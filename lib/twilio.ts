@@ -27,7 +27,7 @@ export async function provisionPhoneNumber(params: {
     // Search for available numbers
     const numbers = await withRetry(() =>
       twilioClient.availablePhoneNumbers(country).local.list({
-        areaCode,
+        areaCode: areaCode ? parseInt(areaCode) : undefined,
         limit: 5,
       })
     )
