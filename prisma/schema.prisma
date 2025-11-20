@@ -1,0 +1,727 @@
+// Prisma Schema for ReplyHub
+// PostgreSQL via Supabase
+// 10 Models - Production Ready
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==========================================
+// 1. USER MODEL
+// ==========================================
+model User {
+  id           String   @id @default(cuid())
+  clerkId      String   @unique
+  email        String   @unique
+  firstName    String?
+  lastName     String?
+  imageUrl     String?
+
+  // Account relationship (1:1)
+  accountId    String   @unique
+  account      Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // Metadata
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Indexes for performance
+  @@index([clerkId])
+  @@index([email])
+  @@map("users")
+}
+
+// ==========================================
+// 2. ACCOUNT MODEL (Multi-tenant core)
+// ==========================================
+model Account {
+  id                    String        @id @default(cuid())
+
+  // Business Information (US Format)
+  businessName          String
+  industry              String?
+  website               String?
+  phone                 String?
+  email                 String?
+
+  // US Address
+  address               String?
+  city                  String?
+  state                 String?
+  zipCode               String?
+  country               String        @default("US")
+
+  // Subscription & Billing
+  plan                  PlanType      @default(STARTER)
+  status                AccountStatus @default(TRIAL)
+  trialEndsAt           DateTime?
+  setupFeesPaid         Boolean       @default(false)
+
+  // Stripe Integration
+  stripeCustomerId      String?       @unique
+  stripeSubscriptionId  String?       @unique
+  stripePaymentMethodId String?
+
+  // Usage Tracking
+  currentPeriodStart    DateTime      @default(now())
+  currentPeriodEnd      DateTime?
+  minutesUsed           Int           @default(0)
+  minutesLimit          Int           @default(500)
+  smsUsed               Int           @default(0)
+  smsLimit              Int           @default(1000)
+  emailsUsed            Int           @default(0)
+  emailsLimit           Int           @default(5000)
+
+  // Overage Settings
+  autoPayOverages       Boolean       @default(true)
+  overageLimitUsd       Float?
+
+  // Settings
+  timezone              String        @default("America/New_York")
+  dateFormat            String        @default("MM/DD/YYYY")
+  timeFormat            String        @default("12h")
+  currency              String        @default("USD")
+
+  // Business Hours (JSON)
+  businessHours         Json?
+
+  // Twilio Integration
+  twilioPhoneNumber     String?
+  twilioPhoneSid        String?
+
+  // Google Calendar Integration
+  googleTokens          Json?
+  googleCalendarId      String?
+
+  // Feature Flags
+  featuresEnabled       Json?
+
+  // Onboarding
+  onboardingCompleted   Boolean       @default(false)
+  onboardingStep        Int           @default(0)
+
+  // Relations
+  users                 User[]
+  contacts              Contact[]
+  calls                 Call[]
+  appointments          Appointment[]
+  messages              Message[]
+  activities            Activity[]
+  landingPages          LandingPage[]
+  knowledgeBase         KnowledgeBase?
+  usageRecords          UsageRecord[]
+
+  // Metadata
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  deletedAt             DateTime?
+
+  // Indexes
+  @@index([stripeCustomerId])
+  @@index([status])
+  @@index([plan])
+  @@index([createdAt])
+  @@map("accounts")
+}
+
+enum PlanType {
+  STARTER
+  PRO
+  BUSINESS
+}
+
+enum AccountStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+  SUSPENDED
+}
+
+// ==========================================
+// 3. CONTACT MODEL (CRM)
+// ==========================================
+model Contact {
+  id                String          @id @default(cuid())
+  accountId         String
+  account           Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // Basic Info (US Format)
+  firstName         String
+  lastName          String?
+  fullName          String          @default("")
+  email             String?
+  phone             String
+  alternatePhone    String?
+
+  // Additional Info
+  company           String?
+  jobTitle          String?
+  website           String?
+
+  // US Address
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+
+  // CRM Fields
+  notes             String?         @db.Text
+  tags              String[]        @default([])
+  customFields      Json?
+
+  // Lead Source
+  source            ContactSource   @default(MANUAL)
+  sourceDetails     Json?
+
+  // Status & Stage
+  status            ContactStatus   @default(LEAD)
+  stage             String?
+  leadScore         Int             @default(0)
+
+  // Value Tracking
+  lifetimeValue     Float           @default(0)
+  averageOrderValue Float           @default(0)
+  totalOrders       Int             @default(0)
+
+  // Communication Preferences
+  emailOptIn        Boolean         @default(true)
+  smsOptIn          Boolean         @default(true)
+  doNotContact      Boolean         @default(false)
+
+  // Relations
+  calls             Call[]
+  appointments      Appointment[]
+  messages          Message[]
+  activities        Activity[]
+
+  // Metadata
+  lastContactedAt   DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+
+  // Indexes
+  @@index([accountId])
+  @@index([phone])
+  @@index([email])
+  @@index([status])
+  @@index([source])
+  @@index([createdAt])
+  @@index([lastContactedAt])
+  @@map("contacts")
+}
+
+enum ContactSource {
+  MANUAL
+  PHONE_CALL
+  FORM
+  CHATBOT
+  IMPORT
+  API
+  REFERRAL
+  SOCIAL_MEDIA
+  PAID_AD
+  ORGANIC
+}
+
+enum ContactStatus {
+  LEAD
+  CONTACTED
+  QUALIFIED
+  CUSTOMER
+  INACTIVE
+  LOST
+}
+
+// ==========================================
+// 4. CALL MODEL (VoIP - Twilio)
+// ==========================================
+model Call {
+  id                String          @id @default(cuid())
+  accountId         String
+  account           Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  contactId         String?
+  contact           Contact?        @relation(fields: [contactId], references: [id])
+
+  // Call Details
+  from              String
+  to                String
+  direction         CallDirection
+  status            CallStatus
+
+  // Duration (seconds)
+  duration          Int?
+  talkTime          Int?
+  waitTime          Int?
+
+  // Recording
+  recordingUrl      String?
+  recordingSid      String?
+  recordingDuration Int?
+
+  // Transcription
+  transcription     String?         @db.Text
+  transcriptionStatus String?
+
+  // IVR Journey
+  ivrPath           Json?
+
+  // Call Quality
+  quality           String?
+  callQualityScore  Int?
+
+  // Cost Tracking (USD)
+  cost              Float?
+  costPerMinute     Float?
+
+  // Twilio IDs
+  callSid           String?         @unique
+  parentCallSid     String?
+
+  // Outcome
+  outcome           String?
+  appointmentBooked Boolean         @default(false)
+  leadCaptured      Boolean         @default(false)
+
+  // Follow-up
+  needsFollowUp     Boolean         @default(false)
+  followedUpAt      DateTime?
+
+  // Metadata
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+
+  // Indexes
+  @@index([accountId])
+  @@index([contactId])
+  @@index([from])
+  @@index([to])
+  @@index([status])
+  @@index([direction])
+  @@index([createdAt])
+  @@index([callSid])
+  @@map("calls")
+}
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  IN_PROGRESS
+  COMPLETED
+  BUSY
+  NO_ANSWER
+  FAILED
+  CANCELED
+}
+
+// ==========================================
+// 5. APPOINTMENT MODEL (Google Calendar)
+// ==========================================
+model Appointment {
+  id                String              @id @default(cuid())
+  accountId         String
+  account           Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  contactId         String
+  contact           Contact             @relation(fields: [contactId], references: [id])
+
+  // Appointment Details
+  title             String
+  description       String?             @db.Text
+  type              String?
+
+  // Date & Time (stored in UTC)
+  startTime         DateTime
+  endTime           DateTime
+  duration          Int
+  timezone          String              @default("America/New_York")
+
+  // Location
+  location          String?
+  locationType      LocationType        @default(IN_PERSON)
+  virtualMeetingUrl String?
+
+  // Google Calendar Integration
+  googleEventId     String?
+  googleCalendarId  String?
+  googleMeetLink    String?
+
+  // Status
+  status            AppointmentStatus   @default(SCHEDULED)
+
+  // Reminders
+  reminderSent24h   Boolean             @default(false)
+  reminderSent1h    Boolean             @default(false)
+  reminderSent15min Boolean             @default(false)
+
+  // Confirmation
+  confirmed         Boolean             @default(false)
+  confirmedAt       DateTime?
+  confirmationMethod String?
+
+  // Source
+  source            String?
+  bookedBy          String?
+
+  // Notes
+  staffNotes        String?             @db.Text
+  customerNotes     String?             @db.Text
+
+  // No-show tracking
+  noShowReason      String?
+
+  // Reschedule tracking
+  originalStartTime DateTime?
+  rescheduleCount   Int                 @default(0)
+
+  // Metadata
+  metadata          Json?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Indexes
+  @@index([accountId])
+  @@index([contactId])
+  @@index([startTime])
+  @@index([status])
+  @@index([createdAt])
+  @@map("appointments")
+}
+
+enum LocationType {
+  IN_PERSON
+  PHONE
+  VIDEO
+  ON_SITE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  NO_SHOW
+  CANCELED
+  RESCHEDULED
+}
+
+// ==========================================
+// 6. MESSAGE MODEL (SMS + Email)
+// ==========================================
+model Message {
+  id                String            @id @default(cuid())
+  accountId         String
+  account           Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  contactId         String
+  contact           Contact           @relation(fields: [contactId], references: [id])
+
+  // Type
+  type              MessageType
+  direction         MessageDirection
+
+  // Content
+  from              String
+  to                String
+  subject           String?
+  body              String            @db.Text
+  htmlBody          String?           @db.Text
+
+  // Status
+  status            MessageStatus
+  errorCode         String?
+  errorMessage      String?
+
+  // Delivery tracking
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  readAt            DateTime?
+  clickedAt         DateTime?
+
+  // Provider IDs
+  twilioSid         String?
+  sendgridId        String?
+
+  // Cost (USD)
+  cost              Float?
+
+  // Template
+  templateId        String?
+  templateName      String?
+
+  // Automation
+  automationId      String?
+  campaignId        String?
+
+  // Metadata
+  metadata          Json?
+  createdAt         DateTime          @default(now())
+
+  // Indexes
+  @@index([accountId])
+  @@index([contactId])
+  @@index([type])
+  @@index([direction])
+  @@index([status])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+enum MessageType {
+  SMS
+  EMAIL
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+  UNDELIVERED
+  RECEIVED
+  OPENED
+  CLICKED
+  BOUNCED
+  SPAM
+}
+
+// ==========================================
+// 7. ACTIVITY MODEL (Timeline/Audit)
+// ==========================================
+model Activity {
+  id                String        @id @default(cuid())
+  accountId         String
+  account           Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  contactId         String?
+  contact           Contact?      @relation(fields: [contactId], references: [id])
+
+  // Activity Type
+  type              ActivityType
+
+  // Content
+  title             String
+  description       String?       @db.Text
+
+  // Actor
+  actor             String?
+  actorType         String?
+
+  // Related entities
+  relatedId         String?
+  relatedType       String?
+
+  // Metadata
+  metadata          Json?
+
+  // Timestamp
+  createdAt         DateTime      @default(now())
+
+  // Indexes
+  @@index([accountId])
+  @@index([contactId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+enum ActivityType {
+  CALL_RECEIVED
+  CALL_MADE
+  CALL_MISSED
+  SMS_SENT
+  SMS_RECEIVED
+  EMAIL_SENT
+  EMAIL_RECEIVED
+  APPOINTMENT_SCHEDULED
+  APPOINTMENT_COMPLETED
+  APPOINTMENT_CANCELED
+  NOTE_ADDED
+  STATUS_CHANGED
+  FORM_SUBMITTED
+  CHATBOT_CONVERSATION
+  PAYMENT_RECEIVED
+  INVOICE_SENT
+}
+
+// ==========================================
+// 8. LANDING_PAGE MODEL
+// ==========================================
+model LandingPage {
+  id                String        @id @default(cuid())
+  accountId         String
+  account           Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // Basic Info
+  name              String
+  slug              String        @unique
+  template          String
+
+  // Content (JSON structure)
+  content           Json
+
+  // SEO
+  metaTitle         String?
+  metaDescription   String?       @db.Text
+  metaKeywords      String?
+  ogImage           String?
+
+  // Settings
+  published         Boolean       @default(false)
+  customDomain      String?
+  favicon           String?
+
+  // Branding
+  primaryColor      String        @default("#2563eb")
+  secondaryColor    String        @default("#10b981")
+  logo              String?
+
+  // Integrations
+  googleAnalyticsId String?
+  facebookPixelId   String?
+
+  // Features
+  chatbotEnabled    Boolean       @default(true)
+  appointmentWidget Boolean       @default(true)
+
+  // Analytics
+  views             Int           @default(0)
+  uniqueViews       Int           @default(0)
+  submissions       Int           @default(0)
+  conversionRate    Float?
+
+  // A/B Testing
+  variant           String?
+  parentPageId      String?
+
+  // Metadata
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  publishedAt       DateTime?
+
+  // Indexes
+  @@index([accountId])
+  @@index([slug])
+  @@index([published])
+  @@map("landing_pages")
+}
+
+// ==========================================
+// 9. KNOWLEDGE_BASE MODEL (Chatbot)
+// ==========================================
+model KnowledgeBase {
+  id                String        @id @default(cuid())
+  accountId         String        @unique
+  account           Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // Business Information
+  businessInfo      Json
+
+  // FAQs
+  faqs              Json
+
+  // Chatbot Configuration
+  chatbotName       String        @default("Assistant")
+  greetingMessage   String        @default("Hi! How can I help you today?")
+  tone              String        @default("professional")
+  language          String        @default("en-US")
+
+  // Permissions
+  canSchedule       Boolean       @default(true)
+  canAnswerFAQs     Boolean       @default(true)
+  canCaptureLead    Boolean       @default(true)
+
+  // Escalation
+  escalateKeywords  String[]      @default([])
+  escalateMessage   String?
+
+  // Custom Instructions
+  instructions      String?       @db.Text
+
+  // Training Data
+  conversationHistory Json?
+
+  // Metadata
+  updatedAt         DateTime      @updatedAt
+
+  @@map("knowledge_bases")
+}
+
+// ==========================================
+// 10. USAGE_RECORD MODEL (Billing)
+// ==========================================
+model UsageRecord {
+  id                String        @id @default(cuid())
+  accountId         String
+  account           Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // Period
+  year              Int
+  month             Int
+  billingPeriodStart DateTime
+  billingPeriodEnd   DateTime
+
+  // Plan Info (snapshot)
+  plan              PlanType
+  planPrice         Float
+
+  // Usage
+  minutesIncluded   Int
+  minutesUsed       Int           @default(0)
+  minutesOverage    Int           @default(0)
+
+  smsIncluded       Int
+  smsUsed           Int           @default(0)
+  smsOverage        Int           @default(0)
+
+  emailsIncluded    Int
+  emailsUsed        Int           @default(0)
+  emailsOverage     Int           @default(0)
+
+  // Costs (USD)
+  baseCost          Float
+  minutesCost       Float         @default(0)
+  smsCost           Float         @default(0)
+  emailsCost        Float         @default(0)
+  overageCost       Float         @default(0)
+  totalCost         Float         @default(0)
+
+  // Stripe
+  stripeInvoiceId   String?
+  stripePaid        Boolean       @default(false)
+  stripePaidAt      DateTime?
+
+  // Status
+  status            String        @default("pending")
+
+  // Metadata
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Indexes
+  @@unique([accountId, year, month])
+  @@index([accountId])
+  @@index([status])
+  @@map("usage_records")
+}
