@@ -94,6 +94,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Use Edge Runtime for better performance and global distribution
-export const runtime = 'edge'
+// Use Node.js Runtime for compatibility with Prisma and other Node.js libraries
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

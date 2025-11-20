@@ -5,7 +5,7 @@ import { handleAPIError } from '@/lib/error-handler'
 import { provisionPhoneNumber } from '@/lib/twilio'
 import { z } from 'zod'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 const phoneSchema = z.object({
   areaCode: z.string().length(3).optional(),

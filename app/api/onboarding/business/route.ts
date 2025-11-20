@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { handleAPIError } from '@/lib/error-handler'
 import { z } from 'zod'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 const businessSchema = z.object({
   businessName: z.string().min(1, 'Business name is required'),

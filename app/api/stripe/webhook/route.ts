@@ -160,4 +160,4 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   // TODO: Send notification email to customer
 }
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
